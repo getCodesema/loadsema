@@ -1,0 +1,19 @@
+pre-commit:
+    commands:
+        secrets:
+            run: gitleaks protect --staged --redact
+
+pre-push:
+    commands:
+        secrets:
+            # pre-commit only ever sees the index: a secret introduced by a commit that skipped
+            # the hook (--no-verify, a rebase, a cherry-pick, a commit written by another tool)
+            # would meet nothing before the forge. So scan what is about to leave, bounded to the
+            # unpushed commits. Fall back to the full scan while the branch has no upstream yet
+            # (first push, `@{push}` unresolved).
+            run: |
+                if remote_head="$(git rev-parse '@{push}' 2>/dev/null)"; then
+                  gitleaks git --no-banner --redact --log-opts="$remote_head..HEAD" .
+                else
+                  gitleaks git --no-banner --redact .
+                fi
