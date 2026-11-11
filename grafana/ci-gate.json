@@ -39,14 +39,76 @@
   "panels": [
     {
       "type": "stat",
+      "title": "Gate mode",
+      "datasource": {
+        "type": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "ci_gate_enforce",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "holding jobs",
+                  "color": "green"
+                },
+                "0": {
+                  "text": "observing only",
+                  "color": "orange"
+                }
+              }
+            }
+          ]
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 1
+    },
+    {
+      "type": "stat",
       "title": "Jobs running",
       "datasource": {
         "type": "prometheus"
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 0,
+        "w": 3,
+        "x": 3,
         "y": 0
       },
       "targets": [
@@ -82,7 +144,7 @@
           ]
         }
       },
-      "id": 1
+      "id": 2
     },
     {
       "type": "stat",
@@ -92,8 +154,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 4,
+        "w": 3,
+        "x": 6,
         "y": 0
       },
       "targets": [
@@ -137,7 +199,7 @@
           ]
         }
       },
-      "id": 2
+      "id": 3
     },
     {
       "type": "stat",
@@ -147,8 +209,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 8,
+        "w": 3,
+        "x": 9,
         "y": 0
       },
       "targets": [
@@ -194,7 +256,7 @@
         }
       },
       "description": "The gate admits nothing above 90%.",
-      "id": 3
+      "id": 4
     },
     {
       "type": "stat",
@@ -204,7 +266,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
+        "w": 3,
         "x": 12,
         "y": 0
       },
@@ -250,7 +312,7 @@
           ]
         }
       },
-      "id": 4
+      "id": 5
     },
     {
       "type": "stat",
@@ -260,8 +322,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 16,
+        "w": 3,
+        "x": 15,
         "y": 0
       },
       "targets": [
@@ -299,7 +361,7 @@
         }
       },
       "description": "Self-tuned: grows while jobs wait on a host with idle CPU, shrinks on saturation.",
-      "id": 5
+      "id": 6
     },
     {
       "type": "stat",
@@ -309,8 +371,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 20,
+        "w": 3,
+        "x": 18,
         "y": 0
       },
       "targets": [
@@ -355,7 +417,55 @@
           ]
         }
       },
-      "id": 6
+      "id": 7
+    },
+    {
+      "type": "stat",
+      "title": "Jobs admitted (time range)",
+      "datasource": {
+        "type": "prometheus"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 3,
+        "x": 21,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "increase(ci_gate_admissions_total[$__range])",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      },
+      "id": 8
     },
     {
       "type": "timeseries",
@@ -430,7 +540,7 @@
         }
       },
       "description": "A job is admitted while committed plus its profile stays under the budget.",
-      "id": 7
+      "id": 9
     },
     {
       "type": "timeseries",
@@ -488,7 +598,7 @@
           "sort": "desc"
         }
       },
-      "id": 8
+      "id": 10
     },
     {
       "type": "timeseries",
@@ -546,7 +656,7 @@
           "sort": "desc"
         }
       },
-      "id": 9
+      "id": 11
     },
     {
       "type": "timeseries",
@@ -596,7 +706,7 @@
           "sort": "desc"
         }
       },
-      "id": 10
+      "id": 12
     },
     {
       "type": "timeseries",
@@ -663,7 +773,7 @@
           "sort": "desc"
         }
       },
-      "id": 11
+      "id": 13
     },
     {
       "type": "timeseries",
@@ -721,17 +831,17 @@
           "sort": "desc"
         }
       },
-      "id": 12
+      "id": 14
     },
     {
       "type": "table",
-      "title": "Jobs (over the selected time range)",
+      "title": "Jobs: size and time",
       "datasource": {
         "type": "prometheus"
       },
-      "description": "Profile and quota are what the gate uses now. The other columns only count runs finished since the regulator last started.",
+      "description": "Profile and quota are what the gate uses now. Counted over the selected time range, on runs finished while the regulator was up.",
       "gridPos": {
-        "h": 12,
+        "h": 11,
         "w": 24,
         "x": 0,
         "y": 31
@@ -756,7 +866,7 @@
           "instant": true
         },
         {
-          "expr": "ci_gate_job_profile_memory_bytes{project=~\"$project\"}",
+          "expr": "ci_gate_job_last_cores{project=~\"$project\"}",
           "refId": "C",
           "datasource": {
             "type": "prometheus"
@@ -765,7 +875,7 @@
           "instant": true
         },
         {
-          "expr": "increase(ci_gate_job_runs_total{project=~\"$project\"}[$__range])",
+          "expr": "ci_gate_job_profile_memory_bytes{project=~\"$project\"}",
           "refId": "D",
           "datasource": {
             "type": "prometheus"
@@ -774,7 +884,7 @@
           "instant": true
         },
         {
-          "expr": "increase(ci_gate_job_duration_seconds_total{project=~\"$project\"}[$__range]) / increase(ci_gate_job_runs_total{project=~\"$project\"}[$__range])",
+          "expr": "ci_gate_job_last_memory_bytes{project=~\"$project\"}",
           "refId": "E",
           "datasource": {
             "type": "prometheus"
@@ -783,7 +893,7 @@
           "instant": true
         },
         {
-          "expr": "increase(ci_gate_job_wait_seconds_total{project=~\"$project\"}[$__range]) / increase(ci_gate_job_runs_total{project=~\"$project\"}[$__range])",
+          "expr": "ci_gate_job_last_pids_peak{project=~\"$project\"}",
           "refId": "F",
           "datasource": {
             "type": "prometheus"
@@ -792,7 +902,7 @@
           "instant": true
         },
         {
-          "expr": "increase(ci_gate_job_throttled_seconds_total{project=~\"$project\"}[$__range]) / increase(ci_gate_job_duration_seconds_total{project=~\"$project\"}[$__range])",
+          "expr": "increase(ci_gate_job_runs_total{project=~\"$project\"}[$__range])",
           "refId": "G",
           "datasource": {
             "type": "prometheus"
@@ -801,7 +911,7 @@
           "instant": true
         },
         {
-          "expr": "increase(ci_gate_job_io_stall_seconds_total{project=~\"$project\"}[$__range]) / increase(ci_gate_job_duration_seconds_total{project=~\"$project\"}[$__range])",
+          "expr": "increase(ci_gate_job_duration_seconds_total{project=~\"$project\"}[$__range]) / increase(ci_gate_job_runs_total{project=~\"$project\"}[$__range])",
           "refId": "H",
           "datasource": {
             "type": "prometheus"
@@ -810,7 +920,7 @@
           "instant": true
         },
         {
-          "expr": "ci_gate_job_last_pids_peak{project=~\"$project\"}",
+          "expr": "increase(ci_gate_job_wait_seconds_total{project=~\"$project\"}[$__range]) / increase(ci_gate_job_runs_total{project=~\"$project\"}[$__range])",
           "refId": "I",
           "datasource": {
             "type": "prometheus"
@@ -838,13 +948,13 @@
               "project": "Project",
               "Value #A": "Profile (cores)",
               "Value #B": "Quota (cores)",
-              "Value #C": "Profile (memory)",
-              "Value #D": "Runs",
-              "Value #E": "Avg duration",
-              "Value #F": "Avg gate wait",
-              "Value #G": "Held back by quota",
-              "Value #H": "Waiting for disk",
-              "Value #I": "Peak processes (last run)"
+              "Value #C": "Cores, last run (p90)",
+              "Value #D": "Profile (memory)",
+              "Value #E": "Memory peak, last run",
+              "Value #F": "Peak processes, last run",
+              "Value #G": "Runs",
+              "Value #H": "Avg duration",
+              "Value #I": "Avg gate wait"
             }
           }
         }
@@ -892,6 +1002,22 @@
           {
             "matcher": {
               "id": "byName",
+              "options": "Cores, last run (p90)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
               "options": "Profile (memory)"
             },
             "properties": [
@@ -902,6 +1028,38 @@
               {
                 "id": "decimals",
                 "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Memory peak, last run"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Peak processes, last run"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
               }
             ]
           },
@@ -952,7 +1110,146 @@
                 "value": 0
               }
             ]
+          }
+        ]
+      },
+      "options": {
+        "sortBy": [
+          {
+            "displayName": "Profile (cores)",
+            "desc": true
+          }
+        ],
+        "footer": {
+          "show": false
+        }
+      },
+      "id": 15
+    },
+    {
+      "type": "table",
+      "title": "Jobs: what holds them back",
+      "datasource": {
+        "type": "prometheus"
+      },
+      "description": "Share of the run time a job lost, and what it did to the disk and the memory. Counted over the selected time range, on runs finished while the regulator was up.",
+      "gridPos": {
+        "h": 11,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "targets": [
+        {
+          "expr": "increase(ci_gate_job_throttled_seconds_total{project=~\"$project\"}[$__range]) / increase(ci_gate_job_duration_seconds_total{project=~\"$project\"}[$__range])",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus"
           },
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "increase(ci_gate_job_cpu_stall_seconds_total{project=~\"$project\"}[$__range]) / increase(ci_gate_job_duration_seconds_total{project=~\"$project\"}[$__range])",
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus"
+          },
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "increase(ci_gate_job_io_stall_seconds_total{project=~\"$project\"}[$__range]) / increase(ci_gate_job_duration_seconds_total{project=~\"$project\"}[$__range])",
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus"
+          },
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "increase(ci_gate_job_memory_stall_seconds_total{project=~\"$project\"}[$__range]) / increase(ci_gate_job_duration_seconds_total{project=~\"$project\"}[$__range])",
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus"
+          },
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "increase(ci_gate_job_io_read_bytes_total{project=~\"$project\"}[$__range]) / increase(ci_gate_job_runs_total{project=~\"$project\"}[$__range])",
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus"
+          },
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "increase(ci_gate_job_io_written_bytes_total{project=~\"$project\"}[$__range]) / increase(ci_gate_job_runs_total{project=~\"$project\"}[$__range])",
+          "refId": "F",
+          "datasource": {
+            "type": "prometheus"
+          },
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "increase(ci_gate_job_memory_limit_hits_total{project=~\"$project\"}[$__range])",
+          "refId": "G",
+          "datasource": {
+            "type": "prometheus"
+          },
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "increase(ci_gate_job_oom_kills_total{project=~\"$project\"}[$__range])",
+          "refId": "H",
+          "datasource": {
+            "type": "prometheus"
+          },
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "instance": true,
+              "job": true
+            },
+            "renameByName": {
+              "ci_job": "Job",
+              "project": "Project",
+              "Value #A": "Held back by quota",
+              "Value #B": "Waiting for CPU",
+              "Value #C": "Waiting for disk",
+              "Value #D": "Waiting for memory",
+              "Value #E": "Disk read per run",
+              "Value #F": "Disk written per run",
+              "Value #G": "Memory limit hits",
+              "Value #H": "Killed for lack of memory"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
           {
             "matcher": {
               "id": "byName",
@@ -965,7 +1262,75 @@
               },
               {
                 "id": "decimals",
-                "value": 0
+                "value": 1
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 0.1
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.25
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Waiting for CPU"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 0.1
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.25
+                    }
+                  ]
+                }
               }
             ]
           },
@@ -982,13 +1347,129 @@
               {
                 "id": "decimals",
                 "value": 1
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 0.1
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.25
+                    }
+                  ]
+                }
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "Peak processes (last run)"
+              "options": "Waiting for memory"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 0.1
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.25
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Disk read per run"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Disk written per run"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              },
+              {
+                "id": "decimals",
+                "value": 1
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Memory limit hits"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Killed for lack of memory"
             },
             "properties": [
               {
@@ -1006,7 +1487,7 @@
       "options": {
         "sortBy": [
           {
-            "displayName": "Profile (cores)",
+            "displayName": "Waiting for CPU",
             "desc": true
           }
         ],
@@ -1014,7 +1495,7 @@
           "show": false
         }
       },
-      "id": 13
+      "id": 16
     },
     {
       "type": "timeseries",
@@ -1026,7 +1507,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 43
+        "y": 53
       },
       "targets": [
         {
@@ -1064,7 +1545,7 @@
           "sort": "desc"
         }
       },
-      "id": 14
+      "id": 17
     },
     {
       "type": "timeseries",
@@ -1076,7 +1557,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 43
+        "y": 53
       },
       "targets": [
         {
@@ -1114,7 +1595,107 @@
           "sort": "desc"
         }
       },
-      "id": 15
+      "id": 18
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory peak of the last run, per job",
+      "datasource": {
+        "type": "prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 62
+      },
+      "targets": [
+        {
+          "expr": "ci_gate_job_last_memory_bytes{project=~\"$project\"}",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus"
+          },
+          "legendFormat": "{{ci_job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0,
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 19
+    },
+    {
+      "type": "timeseries",
+      "title": "Peak processes of the last run, per job",
+      "datasource": {
+        "type": "prometheus"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 62
+      },
+      "targets": [
+        {
+          "expr": "ci_gate_job_last_pids_peak{project=~\"$project\"}",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus"
+          },
+          "legendFormat": "{{ci_job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 20
     }
   ]
 }

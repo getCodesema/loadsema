@@ -152,13 +152,17 @@ Any Prometheus-compatible collector can scrape it, OpenTelemetry collectors incl
   `ci_gate_job_profile_memory_bytes`, `ci_gate_job_quota_cores`, `ci_gate_job_runs_total`,
   `ci_gate_job_duration_seconds_total`, `ci_gate_job_wait_seconds_total`,
   `ci_gate_job_throttled_seconds_total`, `ci_gate_job_cpu_stall_seconds_total`,
-  `ci_gate_job_io_stall_seconds_total`, and `ci_gate_job_last_*` for the last run.
+  `ci_gate_job_io_stall_seconds_total`, `ci_gate_job_memory_stall_seconds_total`,
+  `ci_gate_job_io_read_bytes_total`, `ci_gate_job_io_written_bytes_total`,
+  `ci_gate_job_memory_limit_hits_total`, `ci_gate_job_oom_kills_total`, and `ci_gate_job_last_*`
+  for the last run.
 
 Counters restart from zero with the regulator. The profile and quota gauges come from
 `profiles.json`, so they are there from the first scrape.
 
 A Grafana dashboard built on these metrics is in [`grafana/ci-gate.json`](grafana/ci-gate.json):
 import it, or drop it in a provisioned dashboards folder. It uses the default Prometheus data source.
+It is generated: edit `grafana/generate.py`, then run `python3 grafana/generate.py grafana/ci-gate.json`.
 
 ## Limits
 

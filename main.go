@@ -303,6 +303,11 @@ func (r *regulator) record(j *job, run Profile) {
 	st.throttledSec += rec.ThrottledSec
 	st.cpuStallSec += rec.CPUStallSec
 	st.ioStallSec += rec.IOStallSec
+	st.memStallSec += rec.MemStallSec
+	st.ioReadBytes += rec.IOReadBytes
+	st.ioWriteBytes += rec.IOWriteBytes
+	st.memMaxEvents += rec.MemMaxEvents
+	st.oomKills += rec.OOMKills
 	st.last = rec
 
 	line, _ := json.Marshal(rec)

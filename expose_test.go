@@ -14,7 +14,7 @@ func TestRenderMetrics(t *testing.T) {
 		enforce: true, running: 3, waiting: 2, cpuBudget: 26.5, ncpu: 24, diskFreeRatio: 0.18,
 		admissions: 5, waitSum: 5096.5, waitHist: hist,
 		profiles: map[string][]Profile{`42/e2e "chrome"`: {p(8.9)}},
-		stats:    map[string]*jobStats{"42/unit/tests": {runs: 2, durationSec: 300, last: runRecord{PidsPeak: 931}}},
+		stats:    map[string]*jobStats{"42/unit/tests": {runs: 2, durationSec: 300, ioWriteBytes: 4096, oomKills: 1, last: runRecord{PidsPeak: 931}}},
 	})
 	for _, want := range []string{
 		"# TYPE ci_gate_jobs gauge\n",
@@ -35,6 +35,8 @@ func TestRenderMetrics(t *testing.T) {
 		`ci_gate_job_quota_cores{project="42",ci_job="e2e \"chrome\""} 14` + "\n",
 		`ci_gate_job_runs_total{project="42",ci_job="unit/tests"} 2` + "\n",
 		`ci_gate_job_last_pids_peak{project="42",ci_job="unit/tests"} 931` + "\n",
+		`ci_gate_job_io_written_bytes_total{project="42",ci_job="unit/tests"} 4096` + "\n",
+		`ci_gate_job_oom_kills_total{project="42",ci_job="unit/tests"} 1` + "\n",
 	} {
 		if !strings.Contains(page, want) {
 			t.Errorf("missing %q", want)

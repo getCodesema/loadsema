@@ -24,6 +24,8 @@ func bucketOf(sec float64) int {
 type jobStats struct {
 	runs                                                        float64
 	durationSec, waitSec, throttledSec, cpuStallSec, ioStallSec float64
+	memStallSec, ioReadBytes, ioWriteBytes                      float64
+	memMaxEvents, oomKills                                      float64
 	last                                                        runRecord
 }
 
@@ -164,6 +166,16 @@ func renderMetrics(s snapshot) string {
 		stat(func(j *jobStats) float64 { return j.cpuStallSec }))
 	perJob("ci_gate_job_io_stall_seconds_total", "counter", "Time a job waited for the disk, summed over its runs.", ran,
 		stat(func(j *jobStats) float64 { return j.ioStallSec }))
+	perJob("ci_gate_job_memory_stall_seconds_total", "counter", "Time a job waited for memory, summed over its runs.", ran,
+		stat(func(j *jobStats) float64 { return j.memStallSec }))
+	perJob("ci_gate_job_io_read_bytes_total", "counter", "Bytes a job read from disk, summed over its runs.", ran,
+		stat(func(j *jobStats) float64 { return j.ioReadBytes }))
+	perJob("ci_gate_job_io_written_bytes_total", "counter", "Bytes a job wrote to disk, summed over its runs.", ran,
+		stat(func(j *jobStats) float64 { return j.ioWriteBytes }))
+	perJob("ci_gate_job_memory_limit_hits_total", "counter", "Times a job reached its memory limit, summed over its runs.", ran,
+		stat(func(j *jobStats) float64 { return j.memMaxEvents }))
+	perJob("ci_gate_job_oom_kills_total", "counter", "Processes of a job killed for lack of memory, summed over its runs.", ran,
+		stat(func(j *jobStats) float64 { return j.oomKills }))
 	perJob("ci_gate_job_last_duration_seconds", "gauge", "Run time of the last run of a job.", ran,
 		stat(func(j *jobStats) float64 { return j.last.DurationSec }))
 	perJob("ci_gate_job_last_cores", "gauge", "Cores (p90) of the last run of a job.", ran,
