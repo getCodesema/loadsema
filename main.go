@@ -191,7 +191,12 @@ func (r *regulator) measure(j *job, containerIDs []string, dtSec float64) {
 	j.memNow = 0
 	for _, cid := range containerIDs {
 		dir := r.cgroupDir(cid)
-		stat, _ := os.ReadFile(filepath.Join(dir, "cpu.stat"))
+		stat, err := os.ReadFile(filepath.Join(dir, "cpu.stat"))
+		if err != nil {
+			// Docker still lists the container but its cgroup is gone: keep what was last read
+			// instead of overwriting the counters of the run with zeros.
+			continue
+		}
 		usec := field(string(stat), "usage_usec")
 		if prev, seen := j.cpuUsec[cid]; seen && usec >= prev {
 			deltaUsec += usec - prev
@@ -412,6 +417,10 @@ func (r *regulator) tick() error {
 		}
 		j.key = project + "/" + name
 		j.since = info.ModTime().UnixMilli()
+		// Its containers may have been seen before the ticket (services start first), and counted
+		// as a job running without a gate: it waits from the ticket on.
+		j.admittedAt = 0
+		j.samples = nil
 	}
 
 	byJob, err := r.containersByJob()

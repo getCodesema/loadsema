@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestIOBytesSumsEveryDevice(t *testing.T) {
 	stat := "8:0 rbytes=100 wbytes=32817152 rios=0 wios=8024 dbytes=0 dios=0\n" +
@@ -34,5 +38,30 @@ func TestFieldDoesNotConfuseEventNames(t *testing.T) {
 	}
 	if got := field(events, "oom_kill"); got != 2 {
 		t.Errorf("oom_kill: got %v", got)
+	}
+}
+
+func TestMeasureKeepsCountersWhenTheCgroupIsGone(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "docker", "abc")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	write := func(name, content string) {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("cpu.stat", "usage_usec 1000\nthrottled_usec 500\n")
+	write("pids.peak", "42\n")
+	r := &regulator{cgroup: root}
+	j := &job{cpuUsec: map[string]float64{}, memPeak: map[string]float64{}, counters: map[string]counters{}}
+	r.measure(j, []string{"abc"}, 2)
+	if err := os.RemoveAll(dir); err != nil {
+		t.Fatal(err)
+	}
+	r.measure(j, []string{"abc"}, 2)
+	if c := j.counters["abc"]; c.pidsPeak != 42 || c.throttledUsec != 500 {
+		t.Errorf("counters lost: %+v", c)
 	}
 }
