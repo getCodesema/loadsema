@@ -3,8 +3,8 @@ FROM golang:1.27.4-alpine AS build
 WORKDIR /src
 COPY . .
 RUN go vet ./... && go test ./... \
- && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /ci-gate .
+ && CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /regulator .
 
 FROM scratch
-COPY --from=build /ci-gate /ci-gate
-ENTRYPOINT ["/ci-gate"]
+COPY --from=build /regulator /regulator
+ENTRYPOINT ["/regulator"]

@@ -1,4 +1,4 @@
-# ci-gate: admission gate for GitLab Runner
+# gitlab-runner-load-regulator
 
 A small regulator that decides, on a single host, which CI job may start now and which one waits.
 It replaces fixed job caps (`concurrent`, `limit`) with a decision based on the real load of the host
@@ -62,7 +62,7 @@ Regulator side, next to the runner:
 ```yaml
 services:
   regulator:
-    build: https://github.com/getCodesema/ci-gate.git
+    build: https://github.com/getCodesema/gitlab-runner-load-regulator.git
     restart: unless-stopped
     environment:
       CGROUP_ROOT: /host/cgroup
@@ -161,7 +161,7 @@ import it, or drop it in a provisioned dashboards folder. It uses the default Pr
 
 ```sh
 docker run --rm -v "$PWD":/src -w /src golang:1.27.4-alpine go test ./...
-docker build -t ci-gate .
+docker build -t gitlab-runner-load-regulator .
 ```
 
 `admission.go` holds the decisions as pure functions (`fits`, `pick`, `adapt`, `profileOf`,

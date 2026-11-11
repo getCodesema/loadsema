@@ -1,4 +1,4 @@
-/ci-gate
+/regulator
 *.log
 .env
 .env.*
