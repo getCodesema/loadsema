@@ -431,13 +431,18 @@ func (r *regulator) tick() error {
 		j := r.job(id, now)
 		// A job without ticket never went through the gate (hook skipped): it is already running.
 		j.admitted = true
+		admittedAt := now
 		if j.key != "" {
-			_, err := os.Stat(r.path("go", id))
+			info, err := os.Stat(r.path("go", id))
 			j.admitted = err == nil
+			if err == nil {
+				// The go file dates the admission, also for a job admitted before a restart.
+				admittedAt = info.ModTime().UnixMilli()
+			}
 		}
 		j.lastSeen = now
 		if j.admitted && j.admittedAt == 0 {
-			j.admittedAt = now
+			j.admittedAt = admittedAt
 		}
 		r.measure(j, containerIDs, dtSec)
 		r.cap(j, containerIDs)
