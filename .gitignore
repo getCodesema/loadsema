@@ -1,0 +1,5 @@
+/ci-gate
+*.log
+.env
+.env.*
+!.env.example
