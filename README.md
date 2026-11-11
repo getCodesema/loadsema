@@ -62,7 +62,7 @@ Regulator side, next to the runner:
 ```yaml
 services:
   regulator:
-    build: https://github.com/getCodesema/loadsema.git
+    image: ghcr.io/getcodesema/loadsema:latest
     restart: unless-stopped
     environment:
       CGROUP_ROOT: /host/cgroup
@@ -71,6 +71,20 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /sys/fs/cgroup:/host/cgroup:ro
 ```
+
+Or without Compose:
+
+```sh
+docker run -d --name loadsema --restart unless-stopped \
+  -e CGROUP_ROOT=/host/cgroup \
+  -v /srv/ci/gate:/gate \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /sys/fs/cgroup:/host/cgroup:ro \
+  ghcr.io/getcodesema/loadsema:latest
+```
+
+The image is built for `linux/amd64` and `linux/arm64`. Pin a version tag (`:0.1.0`) rather than
+`latest` if you want updates to be a deliberate step.
 
 The host cgroup tree is mounted aside because `/sys/fs/cgroup` inside a container only shows the
 container itself. The regulator writes `wait.sh` into the gate directory when it starts.
@@ -156,6 +170,8 @@ import it, or drop it in a provisioned dashboards folder. It uses the default Pr
 - The quota lands up to one loop period after a container starts.
 - Tools must size themselves on `/sys/fs/cgroup/cpu.max`, not on the host core count.
 - cgroup v2 only.
+- Jobs that use a `docker:dind` service go through the same gate, but that path is untested.
+- It has run on one host so far: treat it as young software.
 
 ## Development
 
