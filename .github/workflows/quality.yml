@@ -26,7 +26,7 @@ jobs:
             - run: go test ./...
 
             # The image is what gets deployed: build it so a broken Dockerfile fails here.
-            - run: docker build -t gitlab-runner-load-regulator .
+            - run: docker build -t loadsema .
 
     secrets:
         runs-on: ubuntu-latest

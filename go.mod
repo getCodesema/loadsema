@@ -1,3 +1,3 @@
-module github.com/getCodesema/gitlab-runner-load-regulator
+module github.com/getCodesema/loadsema
 
 go 1.27
