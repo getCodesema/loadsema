@@ -1,7 +1,7 @@
 {
   "uid": "ci-gate",
-  "title": "CI gate",
-  "description": "Admission gate of the GitLab runners.",
+  "title": "loadsema",
+  "description": "Admission gate of the GitLab runners, by loadsema (github.com/getCodesema/loadsema).",
   "tags": [
     "ci"
   ],
