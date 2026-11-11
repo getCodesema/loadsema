@@ -11,7 +11,7 @@ func TestRenderMetrics(t *testing.T) {
 		hist[bucketOf(wait)]++
 	}
 	page := renderMetrics(snapshot{
-		enforce: true, running: 3, waiting: 2, cpuBudget: 26.5, ncpu: 24, diskFreeRatio: 0.18,
+		enforce: true, running: 3, waiting: 2, cpuBudget: 26.5, ncpu: 24, diskFreeRatio: 0.18, cpuPressure: 0.34,
 		admissions: 5, waitSum: 5096.5, waitHist: hist,
 		profiles: map[string][]Profile{`42/e2e "chrome"`: {p(8.9)}},
 		stats:    map[string]*jobStats{"42/unit/tests": {runs: 2, durationSec: 300, ioWriteBytes: 4096, oomKills: 1, last: runRecord{PidsPeak: 931}}},
@@ -23,6 +23,7 @@ func TestRenderMetrics(t *testing.T) {
 		"ci_gate_enforce 1\n",
 		"ci_gate_cpu_budget_cores 26.5\n",
 		"ci_gate_disk_free_ratio 0.18\n",
+		"ci_gate_host_cpu_pressure_ratio 0.34\n",
 		// Buckets are cumulative, and the count matches the admissions.
 		`ci_gate_wait_seconds_bucket{le="1"} 1` + "\n",
 		`ci_gate_wait_seconds_bucket{le="5"} 3` + "\n",
@@ -42,7 +43,8 @@ func TestRenderMetrics(t *testing.T) {
 			t.Errorf("missing %q", want)
 		}
 	}
-	if strings.Contains(renderMetrics(snapshot{diskFreeRatio: -1, waitHist: hist}), "ci_gate_disk_free_ratio") {
-		t.Error("an unknown disk must not be exported")
+	unknown := renderMetrics(snapshot{diskFreeRatio: -1, cpuPressure: -1, waitHist: hist})
+	if strings.Contains(unknown, "ci_gate_disk_free_ratio") || strings.Contains(unknown, "ci_gate_host_cpu_pressure_ratio") {
+		t.Error("an unknown disk or pressure must not be exported")
 	}
 }

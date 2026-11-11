@@ -59,6 +59,7 @@ type job struct {
 	capped   map[string]float64 // per container, the CPU quota already applied (0: priority only)
 
 	admittedAt int64               // Unix milliseconds, 0 until admitted
+	shown      bool                // has used at least half of its profile once
 	counters   map[string]counters // per container, last cumulative counters
 }
 
@@ -81,7 +82,9 @@ type regulator struct {
 	stealRatio float64 // share of the host CPU time taken by the hypervisor over the last tick
 	otherCores float64 // smoothed CPU used outside CI
 	busyRatio  float64 // share of the host CPUs in use over the last tick
+	pressure   float64 // share of the last 10 s some task waited for a CPU, -1 when the kernel does not tell
 	overcommit float64 // self-tuned stretch of the CPU budget, see adapt(); kept in state.json
+	lastShrink int64   // Unix milliseconds of the last time the budget shrank
 
 	// Behind the /metrics page, counted since the regulator started.
 	admissions float64
@@ -348,7 +351,15 @@ func (r *regulator) finish(j *job) {
 
 const gib = 1 << 30
 
-func (r *regulator) host(ciCores, ciMem float64, hasWaiting bool) Host {
+// settleMs is how long a job may take to show its load before the budget stops waiting for it.
+// shrinkEveryMs spaces the cuts of the budget: the pressure is a 10 s average, so a cut needs that
+// long to show, and cutting on every tick meanwhile would overshoot.
+const (
+	settleMs      = 90_000
+	shrinkEveryMs = 10_000
+)
+
+func (r *regulator) host(ciCores, ciMem float64, hasWaiting, settled bool, now int64) Host {
 	stat, _ := os.ReadFile(filepath.Join(r.proc, "stat"))
 	first, _, _ := strings.Cut(string(stat), "\n")
 	var total, idle, steal float64
@@ -370,7 +381,22 @@ func (r *regulator) host(ciCores, ciMem float64, hasWaiting bool) Host {
 		r.busyRatio = (busy - r.lastBusy) / (total - r.lastTotal)
 		r.stealRatio = (steal - r.lastSteal) / (total - r.lastTotal)
 		r.otherCores = 0.8*r.otherCores + 0.2*max(0, r.busyRatio*r.ncpu-ciCores)
-		if tuned := adapt(r.overcommit, r.busyRatio, hasWaiting); tuned != r.overcommit {
+	}
+	load := busyLoad(r.busyRatio)
+	r.pressure = -1
+	if psi, err := os.ReadFile(filepath.Join(r.proc, "pressure", "cpu")); err == nil && strings.Contains(string(psi), "some ") {
+		r.pressure = pressure(string(psi), "avg10") / 100
+		load = pressureLoad(r.pressure)
+	}
+	if r.lastTotal > 0 {
+		tuned := adapt(r.overcommit, load, hasWaiting, settled)
+		if tuned < r.overcommit && now-r.lastShrink < shrinkEveryMs {
+			tuned = r.overcommit
+		}
+		if tuned != r.overcommit {
+			if tuned < r.overcommit {
+				r.lastShrink = now
+			}
 			r.overcommit = tuned
 			if err := writeJSON(r.path("state.json"), map[string]float64{"overcommit": tuned}); err != nil {
 				logError("state: %v", err)
@@ -383,7 +409,7 @@ func (r *regulator) host(ciCores, ciMem float64, hasWaiting bool) Host {
 	return Host{
 		CPUBudget: (r.ncpu - r.otherCores) * r.overcommit,
 		MemBudget: mem("MemAvailable") + ciMem - (1-saturated)*mem("MemTotal"),
-		Saturated: r.busyRatio > saturated,
+		Saturated: load.Value > load.High,
 	}
 }
 
@@ -474,16 +500,22 @@ func (r *regulator) tick() error {
 	var running []Running
 	var waiting []*job
 	var ciCores, ciMem float64
+	settled := true // every running job has shown its load, or had the time to
 	for _, j := range r.jobs {
 		ciCores += j.cores
 		ciMem += j.memNow
 		if j.admitted {
-			running = append(running, Running{Expected: need(j), Actual: Profile{Cores: j.cores, MemBytes: j.memNow}})
+			expected := need(j)
+			running = append(running, Running{Expected: expected, Actual: Profile{Cores: j.cores, MemBytes: j.memNow}})
+			j.shown = j.shown || j.cores >= expected.Cores/2
+			if !j.shown && now-j.admittedAt < settleMs {
+				settled = false
+			}
 		} else {
 			waiting = append(waiting, j)
 		}
 	}
-	h := r.host(ciCores, ciMem, len(waiting) > 0)
+	h := r.host(ciCores, ciMem, len(waiting) > 0, settled, now)
 	nRunning, nWaiting := len(running), len(waiting)
 	ioPressureFile, _ := os.ReadFile(filepath.Join(r.proc, "pressure", "io"))
 	ioPressure := string(ioPressureFile)
@@ -512,14 +544,16 @@ func (r *regulator) tick() error {
 			Waiting    int      `json:"waiting"`
 			CPUBudget  float64  `json:"cpuBudget"`
 			BusyPct    int      `json:"busyPct"`
-			Overcommit float64  `json:"overcommit"`
+			// Percent of the last 10 s some task waited for a CPU, -100 when the kernel does not tell.
+			CPUPressure float64 `json:"cpuPressure"`
+			Overcommit  float64 `json:"overcommit"`
 			// Recorded for analysis, not used by the decision.
 			StealPct    float64 `json:"stealPct"`
 			IOPressure  float64 `json:"ioPressure"`
 			DiskFreePct int     `json:"diskFreePct"`
 			WouldFit    *bool   `json:"wouldFit,omitempty"`
 		}{j.id, j.key, int64(math.Round(float64(now-j.since) / 1000)), round1(need(j).Cores), quota, nRunning, nWaiting,
-			round1(h.CPUBudget), int(math.Round(r.busyRatio * 100)), round2(r.overcommit),
+			round1(h.CPUBudget), int(math.Round(r.busyRatio * 100)), round1(r.pressure * 100), round2(r.overcommit),
 			round1(r.stealRatio * 100), pressure(ioPressure, "avg10"), r.diskFreePct(), wouldFit})
 	}
 	if r.enforce {
@@ -548,7 +582,7 @@ func (r *regulator) tick() error {
 		enforce: r.enforce, running: nRunning, waiting: nWaiting,
 		cpuBudget: h.CPUBudget, cpuCommitted: committed, cpuUsed: ciCores,
 		memBudget: h.MemBudget, memUsed: ciMem,
-		busyRatio: r.busyRatio, stealRatio: r.stealRatio, overcommit: r.overcommit,
+		busyRatio: r.busyRatio, stealRatio: r.stealRatio, cpuPressure: r.pressure, overcommit: r.overcommit,
 		ioPressure: pressure(ioPressure, "avg10"), diskFreeRatio: diskFree,
 		admissions: r.admissions, waitSum: r.waitSum, waitHist: r.waitHist,
 		profiles: r.profiles, stats: r.stats, ncpu: r.ncpu,

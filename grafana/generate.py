@@ -62,9 +62,10 @@ panels = [
     stat("Jobs running", 'ci_gate_jobs{state="running"}', 3),
     stat("Jobs waiting in the gate", 'ci_gate_jobs{state="waiting"}', 6,
          steps=[{"color": ok, "value": None}, {"color": warn, "value": 1}, {"color": bad, "value": 8}]),
-    stat("Host CPU in use", "ci_gate_host_cpu_busy_ratio", 9, unit="percentunit", decimals=0,
-         steps=[{"color": ok, "value": None}, {"color": warn, "value": 0.75}, {"color": bad, "value": 0.9}],
-         description="The gate admits nothing above 90%."),
+    stat("Host CPU pressure", "ci_gate_host_cpu_pressure_ratio", 9, unit="percentunit", decimals=0,
+         steps=[{"color": ok, "value": None}, {"color": warn, "value": 0.3}, {"color": bad, "value": 0.5}],
+         description="Share of the last 10 s some task waited for a CPU. The gate widens its budget under 30% "
+                     "and admits nothing above 50%."),
     stat("Gate wait, p95 over 1 h", "histogram_quantile(0.95, sum by (le) (increase(ci_gate_wait_seconds_bucket[1h])))", 12,
          unit="s", decimals=0,
          steps=[{"color": ok, "value": None}, {"color": warn, "value": 60}, {"color": bad, "value": 300}]),
@@ -92,10 +93,11 @@ panels = [
     series("Admissions per 5 min", [target("increase(ci_gate_admissions_total[5m])", "jobs admitted", "A")],
            12, 13, bars=True),
 
-    series("Host: CPU in use, CPU stolen, disk pressure", [
-        target("ci_gate_host_cpu_busy_ratio", "CPU in use", "A"),
-        target("ci_gate_host_cpu_steal_ratio", "CPU taken by the hypervisor", "B"),
-        target("ci_gate_host_io_pressure_ratio", "time waiting for the disk", "C"),
+    series("Host: CPU pressure, CPU in use, CPU stolen, disk pressure", [
+        target("ci_gate_host_cpu_pressure_ratio", "time waiting for a CPU (what the gate decides on)", "A"),
+        target("ci_gate_host_cpu_busy_ratio", "CPU in use", "B"),
+        target("ci_gate_host_cpu_steal_ratio", "CPU taken by the hypervisor", "C"),
+        target("ci_gate_host_io_pressure_ratio", "time waiting for the disk", "D"),
     ], 0, 22, unit="percentunit", maxv=1),
     series("Memory: budget and used by jobs", [
         target("ci_gate_memory_budget_bytes", "budget", "A"),

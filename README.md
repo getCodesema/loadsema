@@ -26,13 +26,18 @@ it clones, and the regulator opens the gate for the job that fits.
    `<project id>/<job name>`. The profile of a job is the median of its last 10 runs. A job never seen
    is sized like the median known job.
 4. **Decision.** A job is admitted when the profiles of the running jobs plus its own fit the budget
-   and the host is under 90% CPU. CPU budget: the host cores minus what runs outside CI. Memory
+   and the host is not pressed: less than half of the last 10 s spent with some task waiting for a
+   CPU (the kernel's pressure information, `/proc/pressure/cpu`). Pressure says whether jobs wait,
+   where the share of CPUs in use only says how much they run. CPU budget: the host cores minus what
+   runs outside CI. Memory
    budget: what is available while keeping 10% of the host free. Oldest first, else the biggest job
    that fits; a job that has waited 5 minutes blocks the ones behind it. When nothing runs, the oldest
    job always passes.
 5. **Self-tuning.** Profiles are peaks, so their sum overstates real use. The CPU budget stretches
-   while jobs wait on a host under 75% CPU and shrinks fast above 90% (`overcommit` in the log). No
-   threshold to tune by hand.
+   while jobs wait on a calm host (pressure under 30%) and shrinks when it is pressed (above 50%),
+   `overcommit` in the log. It only stretches once the running jobs have shown their load: a job
+   spends its first minute installing things, and a calm host then proves nothing. No threshold to
+   tune by hand.
 6. **Quota per job.** A known job gets a CPU quota of 1.5 times its profile (2 cores at least, 90% of
    the host at most), set through the Docker API when it is admitted. Its tools then size their
    workers to what the job really uses instead of the whole host. The quota follows the job: if it
@@ -133,7 +138,7 @@ The regulator logs one JSON line per event on stdout:
 
 - `start`: settings in use.
 - `admit`: job, key, seconds waited, cores needed, quota given, jobs running and waiting, CPU budget,
-  host CPU in use, `overcommit`, and three host readings kept for analysis only: CPU stolen by the
+  host CPU pressure and CPU in use, `overcommit`, and three host readings kept for analysis only: CPU stolen by the
   hypervisor, IO pressure, free disk space.
 - `done`: job, key, cores and memory recorded for this run.
 - `error`: anything that failed.
@@ -145,7 +150,8 @@ Any Prometheus-compatible collector can scrape it, OpenTelemetry collectors incl
 
 - Live: `ci_gate_jobs{state}`, `ci_gate_cpu_budget_cores`, `ci_gate_cpu_committed_cores`,
   `ci_gate_cpu_used_cores`, `ci_gate_memory_budget_bytes`, `ci_gate_memory_used_bytes`,
-  `ci_gate_host_cpu_busy_ratio`, `ci_gate_host_cpu_steal_ratio`, `ci_gate_host_io_pressure_ratio`,
+  `ci_gate_host_cpu_pressure_ratio`, `ci_gate_host_cpu_busy_ratio`, `ci_gate_host_cpu_steal_ratio`,
+  `ci_gate_host_io_pressure_ratio`,
   `ci_gate_disk_free_ratio`, `ci_gate_overcommit`, `ci_gate_enforce`.
 - Gate: `ci_gate_admissions_total`, `ci_gate_wait_seconds` (histogram).
 - Per job, labels `project` and `ci_job`: `ci_gate_job_profile_cores`,
@@ -174,6 +180,9 @@ It is generated: edit `grafana/generate.py`, then run `python3 grafana/generate.
 - The quota lands up to one loop period after a container starts.
 - Tools must size themselves on `/sys/fs/cgroup/cpu.max`, not on the host core count.
 - cgroup v2 only.
+- On a kernel without pressure information (`/proc/pressure/cpu` missing, `psi=1` not set), the
+  gate falls back to the share of CPUs in use: stretch under 75%, nothing admitted above 90%.
+- The pressure marks (30% and 50%) were measured on one 24-core host.
 - Jobs that use a `docker:dind` service go through the same gate, but that path is untested.
 - It has run on one host so far: treat it as young software.
 

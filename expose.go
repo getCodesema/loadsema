@@ -38,6 +38,7 @@ type snapshot struct {
 	cpuUsed               float64 // cores the job containers use right now
 	memBudget, memUsed    float64
 	busyRatio, stealRatio float64
+	cpuPressure           float64 // share of the last 10 s some task waited for a CPU, -1 when unknown
 	overcommit            float64
 	ioPressure            float64 // percent, avg10
 	diskFreeRatio         float64 // -1 when unknown
@@ -108,6 +109,9 @@ func renderMetrics(s snapshot) string {
 	w.gauge("ci_gate_memory_used_bytes", "Memory the job containers use right now.", s.memUsed)
 	w.gauge("ci_gate_host_cpu_busy_ratio", "Share of the host CPUs in use over the last tick.", s.busyRatio)
 	w.gauge("ci_gate_host_cpu_steal_ratio", "Share of the host CPU time taken by the hypervisor over the last tick.", s.stealRatio)
+	if s.cpuPressure >= 0 {
+		w.gauge("ci_gate_host_cpu_pressure_ratio", "Share of the last 10 s some task waited for a CPU: what the gate decides on.", s.cpuPressure)
+	}
 	w.gauge("ci_gate_host_io_pressure_ratio", "Share of the last 10 s some task waited for the disk.", s.ioPressure/100)
 	if s.diskFreeRatio >= 0 {
 		w.gauge("ci_gate_disk_free_ratio", "Free space of the filesystem holding the gate directory.", s.diskFreeRatio)

@@ -31,8 +31,23 @@ type Host struct {
 	Saturated bool
 }
 
-// saturated is the share of the host CPUs and memory that CI may fill.
+// saturated is the share of the host memory that CI may fill, and of the host CPUs a quota may reach.
 const saturated = 0.9
+
+// Load is how hard the host CPUs are pressed, and the two marks it is read against: under Calm
+// there is room for more, above High the jobs already slow each other down.
+type Load struct {
+	Value, Calm, High float64
+}
+
+// pressureLoad reads the load from the kernel's CPU pressure: the share of the last 10 s some task
+// waited for a CPU. It says whether jobs wait, where the share of CPUs in use only says how much
+// they run: 80% in use is comfortable on one host and painful on another. Marks measured on a
+// 24-core host: about 0.25 with one pipeline running alone, 0.5 to 0.6 when jobs took half longer.
+func pressureLoad(waiting float64) Load { return Load{Value: waiting, Calm: 0.30, High: 0.50} }
+
+// busyLoad is the fallback on a kernel without pressure information: the share of CPUs in use.
+func busyLoad(busyRatio float64) Load { return Load{Value: busyRatio, Calm: 0.75, High: saturated} }
 
 // fits reports whether a job fits the room left on a host that is not saturated.
 func fits(need Profile, running []Running, h Host) bool {
@@ -77,12 +92,14 @@ func pick(waiting []Waiting, running []Running, h Host, agingMs, now int64) (str
 
 // adapt tunes the stretch of the CPU budget (additive increase, multiplicative decrease).
 // Profiles are peaks, so their sum overstates real use: stretch the budget while jobs wait on a
-// host with idle CPU, shrink it fast when the host saturates.
-func adapt(overcommit, busyRatio float64, hasWaiting bool) float64 {
-	if busyRatio > saturated {
+// calm host, shrink it when the host is pressed. settled says the running jobs have shown their
+// load: a job spends its first minute installing things, and a host that looks calm then is no
+// proof there is room for more.
+func adapt(overcommit float64, l Load, hasWaiting, settled bool) float64 {
+	if l.Value > l.High {
 		return max(0.5, overcommit*0.9)
 	}
-	if hasWaiting && busyRatio < 0.75 {
+	if hasWaiting && settled && l.Value < l.Calm {
 		return min(4, overcommit+0.05)
 	}
 	return overcommit

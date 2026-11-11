@@ -203,7 +203,7 @@
     },
     {
       "type": "stat",
-      "title": "Host CPU in use",
+      "title": "Host CPU pressure",
       "datasource": {
         "type": "prometheus"
       },
@@ -215,7 +215,7 @@
       },
       "targets": [
         {
-          "expr": "ci_gate_host_cpu_busy_ratio",
+          "expr": "ci_gate_host_cpu_pressure_ratio",
           "refId": "A",
           "datasource": {
             "type": "prometheus"
@@ -234,11 +234,11 @@
               },
               {
                 "color": "orange",
-                "value": 0.75
+                "value": 0.3
               },
               {
                 "color": "red",
-                "value": 0.9
+                "value": 0.5
               }
             ]
           },
@@ -255,7 +255,7 @@
           ]
         }
       },
-      "description": "The gate admits nothing above 90%.",
+      "description": "Share of the last 10 s some task waited for a CPU. The gate widens its budget under 30% and admits nothing above 50%.",
       "id": 4
     },
     {
@@ -710,7 +710,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Host: CPU in use, CPU stolen, disk pressure",
+      "title": "Host: CPU pressure, CPU in use, CPU stolen, disk pressure",
       "datasource": {
         "type": "prometheus"
       },
@@ -722,8 +722,16 @@
       },
       "targets": [
         {
-          "expr": "ci_gate_host_cpu_busy_ratio",
+          "expr": "ci_gate_host_cpu_pressure_ratio",
           "refId": "A",
+          "datasource": {
+            "type": "prometheus"
+          },
+          "legendFormat": "time waiting for a CPU (what the gate decides on)"
+        },
+        {
+          "expr": "ci_gate_host_cpu_busy_ratio",
+          "refId": "B",
           "datasource": {
             "type": "prometheus"
           },
@@ -731,7 +739,7 @@
         },
         {
           "expr": "ci_gate_host_cpu_steal_ratio",
-          "refId": "B",
+          "refId": "C",
           "datasource": {
             "type": "prometheus"
           },
@@ -739,7 +747,7 @@
         },
         {
           "expr": "ci_gate_host_io_pressure_ratio",
-          "refId": "C",
+          "refId": "D",
           "datasource": {
             "type": "prometheus"
           },

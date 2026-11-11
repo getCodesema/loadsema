@@ -114,19 +114,24 @@ func TestBudgetStretchesWhenIdleAndShrinksOnSaturation(t *testing.T) {
 	cases := []struct {
 		name       string
 		overcommit float64
-		busy       float64
+		load       Load
 		waiting    bool
+		settled    bool
 		want       float64
 	}{
-		{"jobs wait on an idle host", 1, 0.5, true, 1.05},
-		{"nobody waits", 1, 0.5, false, 1},
-		{"busy enough", 1, 0.8, true, 1},
-		{"saturated", 2, 0.95, true, 1.8},
-		{"floor", 0.5, 0.95, true, 0.5},
-		{"ceiling", 4, 0.5, true, 4},
+		{"jobs wait on a calm host", 1, pressureLoad(0.1), true, true, 1.05},
+		{"nobody waits", 1, pressureLoad(0.1), false, true, 1},
+		{"running jobs have not shown their load yet", 1, pressureLoad(0.1), true, false, 1},
+		{"pressed enough", 1, pressureLoad(0.4), true, true, 1},
+		{"pressed too much", 2, pressureLoad(0.6), true, true, 1.8},
+		{"pressed too much shrinks even unsettled", 2, pressureLoad(0.6), false, false, 1.8},
+		{"floor", 0.5, pressureLoad(0.6), true, true, 0.5},
+		{"ceiling", 4, pressureLoad(0.1), true, true, 4},
+		{"no pressure information: CPUs in use, calm", 1, busyLoad(0.5), true, true, 1.05},
+		{"no pressure information: CPUs in use, full", 2, busyLoad(0.95), true, true, 1.8},
 	}
 	for _, c := range cases {
-		if got := adapt(c.overcommit, c.busy, c.waiting); !near(got, c.want) {
+		if got := adapt(c.overcommit, c.load, c.waiting, c.settled); !near(got, c.want) {
 			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
 		}
 	}
