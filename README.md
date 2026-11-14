@@ -38,10 +38,11 @@ it clones, and the regulator opens the gate for the job that fits.
    `overcommit` in the log. It only stretches once the running jobs have shown their load: a job
    spends its first minute installing things, and a calm host then proves nothing. No threshold to
    tune by hand.
-6. **Quota per job.** A known job gets a CPU quota of 1.5 times its profile (2 cores at least, 90% of
-   the host at most), set through the Docker API when it is admitted. Its tools then size their
-   workers to what the job really uses instead of the whole host. The quota follows the job: if it
-   grows, it runs into its quota, its profile rises, and so does its next quota.
+6. **Quota per job.** A known job gets a CPU quota of 1.5 times its highest run among the last 10
+   (2 cores at least, 90% of the host at most), set through the Docker API when it is admitted. Its
+   tools then size their workers to what the job really uses instead of the whole host. Runs that
+   stop early do not lower it, and the quota follows the job: if it grows, it runs into its quota,
+   and its next run gets 1.5 times more.
 7. **Low priority.** Every job container gets `CpuShares = 128`. When anything else on the host needs
    CPU, the kernel serves it first, at once, and the jobs take whatever is left.
 

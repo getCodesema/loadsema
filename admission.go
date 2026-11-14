@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"math"
 	"slices"
 )
@@ -127,14 +128,16 @@ func profileOf(runs []Profile, fallback Profile) Profile {
 	return Profile{Cores: quantile(cores, 0.5), MemBytes: quantile(mem, 0.5)}
 }
 
-// quotaOf is the CPU quota of a job, in cores: headroom over its usual peak, so its tools size
-// their workers to what the job really uses instead of the whole host. It follows the job over
-// time: a job that grows runs into its quota, its profile rises, and so does its next quota.
+// quotaOf is the CPU quota of a job, in cores: headroom over its highest recent peak, so its tools
+// size their workers to what the job really uses instead of the whole host. The highest run, not
+// the median: runs that stop early use little and must not lower the quota of the full ones, and a
+// run held at its quota records that quota, so the very next one gets 1.5 times more.
 // A job never seen has no quota of its own: it keeps the runner's wide one until it is learned.
 func quotaOf(runs []Profile, ncpu float64) (float64, bool) {
 	if len(runs) == 0 {
 		return 0, false
 	}
-	cores := math.Ceil(profileOf(runs, Profile{}).Cores * 1.5)
+	highest := slices.MaxFunc(runs, func(a, b Profile) int { return cmp.Compare(a.Cores, b.Cores) })
+	cores := math.Ceil(highest.Cores * 1.5)
 	return min(ncpu*saturated, max(2, cores)), true
 }

@@ -96,7 +96,9 @@ func TestQuotaFollowsTheProfile(t *testing.T) {
 		want  float64
 		known bool
 	}{
-		{"headroom over the usual peak", []Profile{p(8.9), p(9.2), p(8.8)}, 14, true}, // ceil(8.9 * 1.5)
+		{"headroom over the highest peak", []Profile{p(8.9), p(9.2), p(8.8)}, 14, true}, // ceil(9.2 * 1.5)
+		{"runs that stopped early do not lower it", []Profile{p(8.4), p(0.004), p(1.59), p(1.67), p(0.78), p(9.3)}, 14, true},
+		{"a run held at its quota raises the next one", []Profile{p(1.59), p(0.78), p(3.07), p(3.07)}, 5, true},
 		{"floor", []Profile{p(0.2)}, 2, true},
 		{"never above the host share", []Profile{p(20)}, 21.6, true},
 		{"unknown job", nil, 0, false},
